@@ -1,0 +1,10 @@
+query linkFeed {
+  feed {
+    links {
+      id
+      createdAt
+      url
+      description
+    }
+  }
+}
