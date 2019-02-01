@@ -1,6 +1,7 @@
 import React, { ComponentState } from 'react'
 import gql from 'graphql-tag'
 import { Mutation } from 'react-apollo'
+import { withRouter, RouteComponentProps } from 'react-router'
 
 interface State {
   description: string
@@ -32,9 +33,11 @@ interface MutationVariable {
   url: string
 }
 
+interface CreateLinkProps extends RouteComponentProps {}
+
 class CreateLinkMutation extends Mutation<MutationType, MutationVariable> {}
-class CreateLink extends React.Component<{}, State> {
-  constructor(props: {}) {
+class CreateLink extends React.Component<CreateLinkProps, State> {
+  constructor(props: CreateLinkProps) {
     super(props)
 
     this.state = {
@@ -77,7 +80,10 @@ class CreateLink extends React.Component<{}, State> {
             placeholder="Set a url"
           />
         </div>
-        <CreateLinkMutation mutation={POST_MUTATION}>
+        <CreateLinkMutation
+          mutation={POST_MUTATION}
+          onCompleted={() => this.props.history.push('/')}
+        >
           {postMutation => {
             return (
               <button onClick={() => postMutation({ variables: { description, url } })}>
@@ -91,4 +97,4 @@ class CreateLink extends React.Component<{}, State> {
   }
 }
 
-export default CreateLink
+export default withRouter(CreateLink)
