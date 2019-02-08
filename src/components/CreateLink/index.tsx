@@ -2,6 +2,7 @@ import React, { ComponentState } from 'react'
 import gql from 'graphql-tag'
 import { Mutation } from 'react-apollo'
 import { withRouter, RouteComponentProps } from 'react-router'
+import { FEED_QUERY, Data } from '../LinkList'
 
 interface State {
   description: string
@@ -22,7 +23,7 @@ const POST_MUTATION = gql`
 interface MutationType {
   post: {
     id: string
-    createAt: Date
+    createdAt: Date
     url: string
     description: string
   }
@@ -83,6 +84,14 @@ class CreateLink extends React.Component<CreateLinkProps, State> {
         <CreateLinkMutation
           mutation={POST_MUTATION}
           onCompleted={() => this.props.history.push('/')}
+          update={(store, { data }) => {
+            const dataQuery: Data | null = store.readQuery({ query: FEED_QUERY })
+            data && dataQuery && dataQuery.feed && dataQuery.feed.links.unshift(data.post)
+            store.writeQuery({
+              query: FEED_QUERY,
+              data: dataQuery
+            })
+          }}
         >
           {postMutation => {
             return (
