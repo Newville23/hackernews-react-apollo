@@ -3,7 +3,7 @@ import { AUTH_TOKEN } from '../../constant'
 import { timeDifferenceForDate } from '../../utils'
 import { Mutation } from 'react-apollo'
 import gql from 'graphql-tag'
-import { string } from 'prop-types'
+import { LinkItem, Vote } from '../../types'
 
 const VOTE_MUTATION = gql`
   mutation voteMutation($linkId: ID!) {
@@ -27,26 +27,7 @@ const VOTE_MUTATION = gql`
 interface Props {
   link: LinkItem
   index: number
-  onUpdateCacheAfterVote: (store: any, Vote: any, linkId: string) => void
-}
-
-interface LinkItem {
-  id: string
-  description: string
-  url: string
-  votes?: [Vote]
-  postedBy?: User
-  createdAt: Date
-}
-
-interface Vote {
-  id: string
-  user: User
-}
-
-interface User {
-  id: string
-  name: string
+  onUpdateCacheAfterVote?: (store: any, Vote: any, linkId: string) => void
 }
 
 interface VoteMutationType {
@@ -86,7 +67,9 @@ class Link extends React.Component<Props> {
             <VoteMutation
               mutation={VOTE_MUTATION}
               update={(store, { data }) =>
-                data && this.props.onUpdateCacheAfterVote(store, data.vote, linkId)
+                data &&
+                this.props.onUpdateCacheAfterVote &&
+                this.props.onUpdateCacheAfterVote(store, data.vote, linkId)
               }
             >
               {voteMutation => {
