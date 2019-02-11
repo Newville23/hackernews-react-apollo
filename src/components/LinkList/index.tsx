@@ -23,6 +23,33 @@ const NEW_LINKS_SUBSCRIPTION = gql`
     }
   }
 `
+
+const NEW_VOTES_SUBSCRIPTION = gql`
+  subscription {
+    newVote {
+      id
+      link {
+        id
+        url
+        description
+        createdAt
+        postedBy {
+          id
+          name
+        }
+        votes {
+          id
+          user {
+            id
+          }
+        }
+      }
+      user {
+        id
+      }
+    }
+  }
+`
 export const FEED_QUERY = gql`
   query linkFeed {
     feed {
@@ -98,6 +125,7 @@ class LinkList extends React.Component<{}> {
           if (error) {
             return <div> error </div>
           } else if (data && data.feed) {
+            // Add a subscibe When a user create new links
             subscribeToMore({
               document: NEW_LINKS_SUBSCRIPTION,
               updateQuery: (prev, { subscriptionData }) => {
@@ -117,6 +145,11 @@ class LinkList extends React.Component<{}> {
                   }
                 })
               }
+            })
+
+            //Add a subscribe when a user add votes to alink
+            subscribeToMore({
+              document: NEW_VOTES_SUBSCRIPTION
             })
 
             const linksToRender = data.feed.links
