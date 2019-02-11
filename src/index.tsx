@@ -2,6 +2,9 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
 import App from './components/App'
+import { split } from 'apollo-link'
+import { WebsocketLink } from 'apollo-link-ws'
+import { getMainDefinition } from 'apollo-utilities'
 import { ApolloProvider } from 'react-apollo'
 import { ApolloClient } from 'apollo-client'
 import { createHttpLink } from 'apollo-link-http'
@@ -14,6 +17,16 @@ const httpLink = createHttpLink({
   uri: 'http://localhost:4000'
 })
 
+const wslink = new WebsocketLink({
+  uri: `ws://localhost:4000`,
+  options: {
+    reconnect: true,
+    connectionParams: {
+      authToken: localStorage.getItem(AUTH_TOKEN)
+    }
+  }
+})
+
 const authLink = setContext((_, { headers }) => {
   const token = localStorage.getItem(AUTH_TOKEN)
   return {
@@ -24,8 +37,17 @@ const authLink = setContext((_, { headers }) => {
   }
 })
 
+const link = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query)
+    return definition.kind === 'OperationDefinition' && definition.operation === 'subscription'
+  },
+  wslink,
+  authLink.concat(httpLink)
+)
+
 const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link,
   cache: new InMemoryCache()
 })
 
