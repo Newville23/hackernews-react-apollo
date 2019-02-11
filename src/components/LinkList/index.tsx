@@ -3,6 +3,26 @@ import { Query } from 'react-apollo'
 import gql from 'graphql-tag'
 import Link from '../Link'
 
+const NEW_LINKS_SUBSCRIPTION = gql`
+  subscription {
+    newLink {
+      id
+      url
+      description
+      createdAt
+      postedBy {
+        id
+        name
+      }
+      votes {
+        id
+        user {
+          id
+        }
+      }
+    }
+  }
+`
 export const FEED_QUERY = gql`
   query linkFeed {
     feed {
@@ -71,24 +91,49 @@ class LinkList extends React.Component<{}> {
   public render() {
     return (
       <LinkFeedQuery query={FEED_QUERY}>
-        {({ loading, data, error }) => {
-          if (loading) return <div>is loading </div>
-          if (error) return <div> error </div>
+        {({ loading, data, error, subscribeToMore }) => {
+          if (loading) {
+            return <div>is loading </div>
+          }
+          if (error) {
+            return <div> error </div>
+          } else if (data && data.feed) {
+            subscribeToMore({
+              document: NEW_LINKS_SUBSCRIPTION,
+              updateQuery: (prev, { subscriptionData }) => {
+                if (!subscriptionData.data) return prev
+                //@ts-ignore
+                const newLink = subscriptionData.data.newLink
+                const exists = prev.feed.links.find(({ id }) => id === newLink.id)
+                console.log('mm')
+                if (exists) return prev
 
-          const linksToRender = data && data.feed && data.feed.links
-          return (
-            <div>
-              {linksToRender &&
-                linksToRender.map((link, idx) => (
-                  <Link
-                    key={link.id}
-                    link={link}
-                    index={idx}
-                    onUpdateCacheAfterVote={this.updateCacheAfterVote}
-                  />
-                ))}
-            </div>
-          )
+                return Object.assign({}, prev, {
+                  feed: {
+                    links: [newLink, ...prev.feed.links],
+                    count: prev.feed.links.length + 1,
+                    //@ts-ignore
+                    __typename: prev.feed.__typename
+                  }
+                })
+              }
+            })
+
+            const linksToRender = data.feed.links
+            return (
+              <div>
+                {linksToRender &&
+                  linksToRender.map((link, idx) => (
+                    <Link
+                      key={link.id}
+                      link={link}
+                      index={idx}
+                      onUpdateCacheAfterVote={this.updateCacheAfterVote}
+                    />
+                  ))}
+              </div>
+            )
+          }
         }}
       </LinkFeedQuery>
     )

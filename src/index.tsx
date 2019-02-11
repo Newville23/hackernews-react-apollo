@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import './index.css'
 import App from './components/App'
 import { split } from 'apollo-link'
-import { WebsocketLink } from 'apollo-link-ws'
+import { WebSocketLink } from 'apollo-link-ws'
 import { getMainDefinition } from 'apollo-utilities'
 import { ApolloProvider } from 'react-apollo'
 import { ApolloClient } from 'apollo-client'
@@ -17,7 +17,7 @@ const httpLink = createHttpLink({
   uri: 'http://localhost:4000'
 })
 
-const wslink = new WebsocketLink({
+const wslink = new WebSocketLink({
   uri: `ws://localhost:4000`,
   options: {
     reconnect: true,
