@@ -2,6 +2,8 @@ import React from 'react'
 import { Query } from 'react-apollo'
 import gql from 'graphql-tag'
 import Link from '../Link'
+import { withRouter, RouteComponentProps } from 'react-router'
+import { LINKS_PER_PAGE } from '../../constant'
 
 const NEW_LINKS_SUBSCRIPTION = gql`
   subscription {
@@ -51,8 +53,8 @@ const NEW_VOTES_SUBSCRIPTION = gql`
   }
 `
 export const FEED_QUERY = gql`
-  query linkFeed {
-    feed {
+  query linkFeed($first: Int, $skip: Int, $orderBy: LinkOrderByInput) {
+    feed(first: $first, skip: $skip, orderBy: $orderBy) {
       links {
         id
         createdAt
@@ -69,6 +71,7 @@ export const FEED_QUERY = gql`
           }
         }
       }
+      count
     }
   }
 `
@@ -77,7 +80,7 @@ interface LinkElement {
   id: string
   description: string
   url: string
-  votes?: [Vote]
+  votes: [Vote]
   postedBy?: User
   createdAt: Date
 }
@@ -95,16 +98,44 @@ interface User {
 export interface Data {
   feed: {
     links: Array<LinkElement>
+    count: number
   }
 }
 
+interface Props extends RouteComponentProps {
+  param: string
+}
+
 class LinkFeedQuery extends Query<Data> {}
-class LinkList extends React.Component<{}> {
-  constructor(props: {}) {
+class LinkList extends React.Component<Props> {
+  constructor(props: Props) {
     super(props)
 
     this.updateCacheAfterVote = this.updateCacheAfterVote.bind(this)
+    this.getQueryVariables = this.getQueryVariables.bind(this)
+    this.previousPage = this.previousPage.bind(this)
+    this.nextPage = this.nextPage.bind(this)
+    this.getLinksToRender = this.getLinksToRender.bind(this)
   }
+
+  public getLinksToRender(data: Data) {
+    const isNewPage = this.props.location.pathname.includes('new')
+    if (isNewPage) {
+      return data.feed.links
+    }
+    const rankedLinks = data.feed.links.slice()
+    //@ts-ignore
+    rankedLinks.sort((l1, l2) => {
+      if (l1.votes && l2.votes) {
+        return l2.votes.length - l1.votes.length
+      }
+    })
+  }
+
+  public previousPage() {}
+
+  public nextPage(data: Data) {}
+
   public updateCacheAfterVote(store: any, createVote: any, linkId: string) {
     const data = store.readQuery({ query: FEED_QUERY })
 
@@ -115,9 +146,18 @@ class LinkList extends React.Component<{}> {
     store.writeQuery({ query: FEED_QUERY, data })
   }
 
+  public getQueryVariables() {
+    const isNewPage = this.props.location.pathname.includes('new')
+    const page = parseInt(this.props.param, 10)
+    const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0
+    const first = isNewPage ? LINKS_PER_PAGE : 100
+    const orderBy = isNewPage ? 'createdAt_DESC' : null
+    return { first, skip, orderBy }
+  }
+
   public render() {
     return (
-      <LinkFeedQuery query={FEED_QUERY}>
+      <LinkFeedQuery query={FEED_QUERY} variables={this.getQueryVariables()}>
         {({ loading, data, error, subscribeToMore }) => {
           if (loading) {
             return <div>is loading </div>
@@ -152,7 +192,11 @@ class LinkList extends React.Component<{}> {
               document: NEW_VOTES_SUBSCRIPTION
             })
 
-            const linksToRender = data.feed.links
+            const linksToRender = this.getLinksToRender(data)
+            const isNewPage = this.props.location.pathname.includes('new')
+            const pageIndex = this.props.param
+              ? (parseInt(this.props.param) - 1) * LINKS_PER_PAGE
+              : 0
             return (
               <div>
                 {linksToRender &&
@@ -164,6 +208,16 @@ class LinkList extends React.Component<{}> {
                       onUpdateCacheAfterVote={this.updateCacheAfterVote}
                     />
                   ))}
+                {isNewPage && (
+                  <div className="flex ml4 mv4 mv3 gray">
+                    <div className="pointer mr2" onClick={this.previousPage}>
+                      previous
+                    </div>
+                    <div className="pointer" onClick={() => this.nextPage(data)}>
+                      Next
+                    </div>
+                  </div>
+                )}
               </div>
             )
           }
@@ -173,4 +227,4 @@ class LinkList extends React.Component<{}> {
   }
 }
 
-export default LinkList
+export default withRouter(LinkList)
