@@ -4,7 +4,7 @@ import gql from 'graphql-tag'
 import Link from '../Link'
 import { withRouter, RouteComponentProps } from 'react-router'
 import { LINKS_PER_PAGE } from '../../constant'
-
+//TODO: Move this to separate file
 const NEW_LINKS_SUBSCRIPTION = gql`
   subscription {
     newLink {
