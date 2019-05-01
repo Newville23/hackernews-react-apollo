@@ -5,6 +5,7 @@ import Link from '../Link'
 import { withRouter, RouteComponentProps } from 'react-router'
 import { LINKS_PER_PAGE } from '../../constant'
 
+// TODO: Should move this to a new file
 const NEW_LINKS_SUBSCRIPTION = gql`
   subscription {
     newLink {
@@ -25,7 +26,7 @@ const NEW_LINKS_SUBSCRIPTION = gql`
     }
   }
 `
-
+// TODO: Should move this to a new file
 const NEW_VOTES_SUBSCRIPTION = gql`
   subscription {
     newVote {
