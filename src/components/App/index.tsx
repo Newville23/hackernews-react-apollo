@@ -6,6 +6,7 @@ import { Switch, Route, Redirect } from 'react-router-dom'
 import Login from '../Login'
 import Search from '../Search'
 
+//TODO: move this to ...
 class App extends Component {
   public render() {
     return (
